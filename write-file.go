@@ -13,7 +13,12 @@ func writeWithoutBuffer(filename string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	// 使用 defer 关闭文件并检查关闭时的错误
+	defer func() {
+		if err := file.Close(); err != nil {
+			fmt.Printf("Error closing file %s: %v\n", filename, err)
+		}
+	}()
 
 	// 写入10000行数据
 	for i := 0; i < 10000; i++ {
@@ -31,7 +36,11 @@ func writeWithBuffer(filename string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer func() {
+		if err := file.Close(); err != nil {
+			fmt.Printf("Error closing file %s: %v\n", filename, err)
+		}
+	}()
 
 	// 使用bufio.Writer来写入文件
 	writer := bufio.NewWriter(file)
