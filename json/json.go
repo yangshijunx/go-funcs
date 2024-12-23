@@ -38,5 +38,9 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("序列化的结果：%s", string(jsonData))
+	fmt.Printf("序列化的结果：%s\n", string(jsonData))
+	if err := json.Unmarshal(jsonData, &user); err != nil {
+		panic(err)
+	}
+	fmt.Printf("反序列化的结果：%+v", user)
 }
