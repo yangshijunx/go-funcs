@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
+
 	"github.com/redis/go-redis/v9"
 )
 
@@ -25,7 +28,7 @@ func main() {
 		fmt.Printf("连接 Redis 失败: %v\n", err)
 	} else {
 		fmt.Println("连接 Redis 成功")
-		//	清除Redis
+		// 清除Redis
 		rdb.FlushDB(ctx)
 	}
 
@@ -46,7 +49,68 @@ func main() {
 		fmt.Println("RPush成功")
 	}
 
+	// 获取list1
+	if list1, err := rdb.LRange(ctx, "list1", 0, -1).Result(); err != nil { // 获取list1
+		fmt.Println("获取list1失败")
+	} else {
+		fmt.Println("获取list1成功:", list1)
+	}
+
+	// Lpush 和 Rpush 的区别
+	// Lpush 是从左边插入，Rpush 是从右边插入
+	// 为什么左插入顺序是对的，而右插入顺序是反的？
+	if err := rdb.LPush(ctx, "list2", 1, 2, 3).Err(); err != nil {
+		fmt.Println("LPush失败")
+	} else {
+		fmt.Println("LPush成功")
+	}
+
+	// 获取list2
+	if list2, err := rdb.LRange(ctx, "list2", 0, -1).Result(); err != nil {
+		fmt.Println("获取list2失败")
+	} else {
+		fmt.Println("获取list2成功:", list2)
+	}
+
+	// 创建一个 WaitGroup 用来等待 goroutine 完成
+	var wg sync.WaitGroup
+	pubsub := rdb.Subscribe(ctx, "mychannel")
+	wg.Add(1) // 在等待组中增加一个任务
+
+	// 启动 goroutine 接收消息
+	go func() {
+		defer func() {
+			fmt.Println("关闭订阅")
+		}()
+		for {
+			// 等待消息
+			msg, err := pubsub.ReceiveMessage(ctx)
+			if err != nil {
+				fmt.Println("接收消息失败:", err)
+				break
+			}
+			fmt.Println("接收到消息:", msg.Channel, msg.Payload)
+			wg.Done()
+		}
+	}()
+
+	// 等待一些时间，确保订阅已经开始
+	time.Sleep(500 * time.Millisecond)
+
+	// 发布消息
+	err = rdb.Publish(ctx, "mychannel", "hello").Err()
+	if err != nil {
+		fmt.Println("发布消息失败:", err)
+	} else {
+		fmt.Println("发布消息成功")
+	}
+
+	// 等待消息接收完成
+	wg.Wait()
+
+	// 清理资源
 	defer func() {
+		pubsub.Close()
 		if err := rdb.Close(); err != nil {
 			panic(err)
 		}
