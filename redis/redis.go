@@ -110,7 +110,11 @@ func main() {
 
 	// 清理资源
 	defer func() {
-		pubsub.Close()
+		if err := pubsub.Close(); err != nil {
+			panic(err)
+		} else {
+			fmt.Println("关闭订阅成功")
+		}
 		if err := rdb.Close(); err != nil {
 			panic(err)
 		}
