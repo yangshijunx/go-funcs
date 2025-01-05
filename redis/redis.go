@@ -26,6 +26,7 @@ func main() {
 
 	if err != nil {
 		fmt.Printf("连接 Redis 失败: %v\n", err)
+		return
 	} else {
 		fmt.Println("连接 Redis 成功")
 		// 清除Redis
