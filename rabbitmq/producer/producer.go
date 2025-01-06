@@ -28,6 +28,12 @@ func main() {
 	}()
 	// 创建通道
 	ch, err := conn.Channel()
+	// 负载均衡
+	err = ch.Qos(
+		2,     // prefetch count
+		0,     // prefetch size
+		false, // global
+	)
 	if err != nil {
 		failOnError(err, "Failed to open a channel")
 		panic(err)

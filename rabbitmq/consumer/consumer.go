@@ -4,11 +4,24 @@ import (
 	"fmt"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"log"
+	"time"
 )
 
 func failOnError(err error, msg string) {
 	if err != nil {
 		log.Panicf("%s: %s", msg, err)
+	}
+}
+
+// 封装消息处理逻辑
+func processMessages(messages <-chan amqp.Delivery, consumerID int) {
+	for msg := range messages {
+		fmt.Printf("消费者 %d 收到消息: %s\n", consumerID, msg.Body)
+		err := msg.Ack(false) // 手动确认消息
+		if err != nil {
+			log.Printf("消费者 %d 确认消息失败: %s", consumerID, err)
+		}
+		time.Sleep(time.Second * 1) // 模拟消息处理耗时
 	}
 }
 
@@ -56,12 +69,19 @@ func main() {
 	if err != nil {
 		failOnError(err, "Failed to register a consumer")
 	}
-	for msg := range messages {
-		fmt.Printf("Received a message: %s\n", msg.Body)
-		err := msg.Ack(false)
-		// err := msg.Ack(true) // 批量ack确认
-		if err != nil {
-			failOnError(err, "Failed to ack")
-		}
+	for i := 0; i < 2; i++ {
+		go processMessages(messages, i)
 	}
+	// 主进程阻塞，防止程序退出
+	log.Println("等待消息中...")
+	select {} // 无限阻塞
+	//for msg := range messages {
+	//	fmt.Printf("第一个Received a message: %s\n", msg.Body)
+	//	err := msg.Ack(false)
+	//	// err := msg.Ack(true) // 批量ack确认
+	//	time.Sleep(time.Second * 1)
+	//	if err != nil {
+	//		failOnError(err, "Failed to ack")
+	//	}
+	//}
 }
