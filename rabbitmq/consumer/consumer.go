@@ -47,7 +47,7 @@ func main() {
 	messages, err := ch.Consume(
 		q.Name, // queue
 		"",     // consumer
-		true,   // auto-ack
+		false,  // auto-ack 或者称之为 no-ack 就是不需要确认
 		false,  // exclusive
 		false,  // no-local
 		false,  // no-wait
@@ -58,5 +58,10 @@ func main() {
 	}
 	for msg := range messages {
 		fmt.Printf("Received a message: %s\n", msg.Body)
+		err := msg.Ack(false)
+		// err := msg.Ack(true) // 批量ack确认
+		if err != nil {
+			failOnError(err, "Failed to ack")
+		}
 	}
 }
