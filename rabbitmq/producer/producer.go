@@ -40,7 +40,7 @@ func main() {
 	// 声明队列如果不存在就创建
 	q, err := ch.QueueDeclare(
 		"test",
-		false,
+		false, // 是否持久化
 		false,
 		false,
 		false,
@@ -60,8 +60,9 @@ func main() {
 			false,  // 延迟消息
 			false,  // 持久化消息
 			amqp.Publishing{
-				ContentType: "text/plain",
-				Body:        []byte(body),
+				DeliveryMode: amqp.Transient, // 瞬态消息
+				ContentType:  "text/plain",
+				Body:         []byte(body),
 			},
 		)
 		if err != nil {
